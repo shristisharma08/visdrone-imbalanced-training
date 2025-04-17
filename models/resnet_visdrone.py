@@ -69,7 +69,7 @@ class ResNet(nn.Module):
         out = self.fc(out)
         if return_features:
             return out, features.squeeze()  
-        return out
+        return out,x
 
 def ResNet44(num_classes=10):
     num_blocks = [7, 7, 7, 7]  

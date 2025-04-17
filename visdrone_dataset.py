@@ -12,7 +12,7 @@ class VisDroneDataset(Dataset):
         self.root = root
         self.train = train
         self.transform = transform
-        # DOUBT : why are the list created 
+       
         self.images = []
         self.labels = []
 
@@ -20,7 +20,7 @@ class VisDroneDataset(Dataset):
         dataset_folder = os.path.join(self.root, dataset_name, "organized")
         labels_folder = os.path.join(self.root, dataset_name, "labels")
 
-        print(f"🔍 Checking dataset folder: {dataset_folder}")
+        print(f" Checking dataset folder: {dataset_folder}")
 
         # : if the folders doesnt exist , it is for debugging 
         if not os.path.exists(dataset_folder):
@@ -40,21 +40,21 @@ class VisDroneDataset(Dataset):
                         label_path = os.path.join(labels_folder, img_name.replace(".jpg", ".txt"))#C:\Users\csio\Desktop\Deep Learning\IB-Loss-main\VisDrone2019-DET-train\labels\0000071_07349_d_0000012.txt
                         
                         self.images.append(img_path)
-                        # DOUBT :: but we have organised the images based on the labels only , so how can images exist while labels cant??
+                       
                         self.labels.append(label_path if os.path.exists(label_path) else None)
     #length of image 
     def __len__(self):
         return len(self.images)
 
     #get item 
-    # DOUBT : how we gave index , ANSWER : in the "organized" file 
+
     def __getitem__(self, index):
         img_path = self.images[index]
         label_path = self.labels[index]
 
-        print(f"\n📦 Fetching item at index: {index}")
-        print(f"   ├─ Image path: {img_path}")
-        print(f"   └─ Label path: {label_path if label_path else ' No label path'}")
+        print(f"\n Fetching item at index: {index}")
+        print(f"    Image path: {img_path}")
+        print(f"    Label path: {label_path if label_path else ' No label path'}")
 
     # Load image
         image = Image.open(img_path).convert("RGB")
@@ -91,5 +91,5 @@ if __name__ == "__main__":
     dataset = VisDroneDataset(root="C:/Users/csio/Desktop/Deep Learning/IB-Loss-main", train=True, transform=transform)
     print(f" Loaded {len(dataset)} training images")
 
-     # 👇 Triggering __getitem__() with index 0 (change index if needed)
+     #  Triggering __getitem__() with index 0 (change index if needed)
     image, label = dataset[0]

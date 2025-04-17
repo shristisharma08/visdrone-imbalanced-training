@@ -1,5 +1,6 @@
-#it is organizing the dataset using , labels , then matching the images with the label , 
-#in the next step it is looking at the labels , the first class , mapping the class with the class mapping list , making a folder and moving the image associated with it to the folder 
+#we will , see all the label files , then match them with the images , 
+#in the next step , we will open the label file , look for the first class id , match it with the class mapping , 
+#make the folder , and move the images in the folder 
 import os
 import shutil
 
@@ -30,8 +31,8 @@ for labels_file in os.listdir(labels_path):
         with open(labels_file_path, "r") as f:
             first_line = f.readline().strip()
             if not first_line:
-            ###understand the meaning of continue 
-                continue  # Skip empty label files
+           
+                continue  
                     # : it is taking the first class id and then moving the image to the designated folder if it is present or else making a folder 
             class_id = first_line.split(" ")[0]
 
@@ -40,7 +41,7 @@ for labels_file in os.listdir(labels_path):
             class_folder = os.path.join(output_path, class_name)
             
 
-            ###understand the meaning of exist_ok = true 
+           
             os.makedirs(class_folder, exist_ok=True)
 
             src = os.path.join(images_path, image_name)

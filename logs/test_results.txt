@@ -1,0 +1,7 @@
+Script execution started.
+Inside main() function
+Using device: cpu
+Loading VisDrone dataset from: C:\Users\csio\Desktop\Deep Learning\IB-Loss-main
+Train set size: 522
+
+--- Epoch 0 ---
