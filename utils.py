@@ -23,15 +23,14 @@ def train(train_loader, model, optimizer, epoch, args, tf_writer):
     total_loss = 0
     correct = 0
     total = 0
-    criterion = IBLoss(alpha=10000.)
+    criterion = IBLoss(alpha=1000.)
     print(f" Training loop started — Total Batches: {len(train_loader)}")
 
     for i, (images, targets) in enumerate(train_loader):
         print(f" Batch {i}/{len(train_loader)} loaded")
-        print(f"   -> Image shape: {images.shape}, Target shape: {targets.shape}")
         
         images, targets = images.to(args.device), targets.to(args.device)
-        print(f"   -> Moved to {args.device}")
+        
 
         optimizer.zero_grad()
         outputs, features = model(images)
@@ -47,7 +46,6 @@ def train(train_loader, model, optimizer, epoch, args, tf_writer):
         total_loss += loss.item() #total loss including the 1 in the batch 
 
         _, predicted = outputs.max(1) 
-        print(f"   Raw outputs (logits):\n{outputs}")
         batch_total = targets.size(0) #total number of samples in this single batch  
         batch_correct = predicted.eq(targets).sum().item() #correct in this single batch 
         total += batch_total 
@@ -70,22 +68,47 @@ def validate(val_loader, model, epoch, args, tf_writer):
     model.eval()
     correct = 0
     total = 0
-    print("\n Validation loop started")
+
     
+    num_classes = args.num_classes
+    class_correct = [0 for _ in range(num_classes)]
+    class_total = [0 for _ in range(num_classes)]
+
+    print("\n Validation loop started")
+
     with torch.no_grad():
         for images, targets in val_loader:
             images, targets = images.to(args.device), targets.to(args.device)
-            print(f"   -> Validating batch — image shape: {images.shape}")
-            
             outputs, _ = model(images)
             _, predicted = outputs.max(1)
+
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
+            for i in range(len(targets)):
+                label = targets[i].item()
+                pred = predicted[i].item()
+                class_total[label] += 1
+                if label == pred:
+                    class_correct[label] += 1
+
     acc = 100. * correct / total
     print(f" Validation Epoch {epoch} Accuracy: {acc:.2f}%")
+
+   
     tf_writer.add_scalar('val/acc', acc, epoch)
+
+  
+    print("\nClass-wise Accuracy:")
+    for i in range(num_classes):
+        if class_total[i] == 0:
+            print(f" Class {i}: No samples.")
+        else:
+            acc_i = 100. * class_correct[i] / class_total[i]
+            print(f" Class {i}: {acc_i:.2f}% ({class_correct[i]}/{class_total[i]})")
+
     return acc
+
 
 def save_checkpoint(args, state, is_best):
     checkpoint_dir = os.path.join(args.root_model, args.store_name)
@@ -99,3 +122,8 @@ def save_checkpoint(args, state, is_best):
         best_filename = os.path.join(checkpoint_dir, 'model_best.pth.tar')
         torch.save(state, best_filename)
         print(f" Best model saved as: {best_filename}")
+
+
+
+
+

@@ -1,0 +1,1 @@
+python visdrone_train.py --dataset visdrone --loss_type IBLoss --train_rule None --imb_type None --imb_factor 0.01 --epochs 200 --num_classes 10 --gpu 0

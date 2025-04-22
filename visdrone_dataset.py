@@ -3,11 +3,11 @@
 
 import os
 import torch
-from torch.utils.data import Dataset
-from PIL import Image
+from torch.utils.data import Dataset #to import the dataset , it can be #DOUBT
+from PIL import Image # to apply changes in the image and convert them to rgb and save them 
 import torchvision.transforms as transforms
 
-class VisDroneDataset(Dataset):
+class VisDroneDataset(Dataset): #creating a customized dataset as our needs 
     def __init__(self, root, train=True, transform=None):
         self.root = root
         self.train = train
@@ -17,7 +17,7 @@ class VisDroneDataset(Dataset):
         self.labels = []
 
         dataset_name = "VisDrone2019-DET-train" if train else "VisDrone2019-DET-val"
-        dataset_folder = os.path.join(self.root, dataset_name, "organized")
+        dataset_folder = os.path.join(self.root, dataset_name, "organized") #labelled folder 
         labels_folder = os.path.join(self.root, dataset_name, "labels")
 
         print(f" Checking dataset folder: {dataset_folder}")
@@ -29,7 +29,7 @@ class VisDroneDataset(Dataset):
             raise FileNotFoundError(f" Labels folder not found: {labels_folder}")
 
 
-            # : category means , classes folder that is made , 
+            # : category means , classes folder that is made , it is in alphabetical order 
         for category in os.listdir(dataset_folder):
             category_path = os.path.join(dataset_folder, category) #C:\Users\csio\Desktop\Deep Learning\IB-Loss-main\VisDrone2019-DET-train\organized\bicycle
             # : it is to check if category is a folder of images 
@@ -42,41 +42,38 @@ class VisDroneDataset(Dataset):
                         self.images.append(img_path)
                        
                         self.labels.append(label_path if os.path.exists(label_path) else None)
-    #length of image 
+    #length of all the images in the training folder for now  
+        print(f"Total images loaded: {len(self.images)}")
+
     def __len__(self):
         return len(self.images)
 
     #get item 
-
     def __getitem__(self, index):
         img_path = self.images[index]
         label_path = self.labels[index]
 
-        print(f"\n Fetching item at index: {index}")
-        print(f"    Image path: {img_path}")
-        print(f"    Label path: {label_path if label_path else ' No label path'}")
-
     # Load image
         image = Image.open(img_path).convert("RGB")
-        if self.transform:
+        if self.transform: #if transformation is applied it is provided else it is not .
             image = self.transform(image)
-        print(f"    Image loaded and transformed — Shape: {image.shape} | Type: {type(image)}")
+       
 
-    # Default class_id = 0 (if label not found)
+    
         class_id = 0
         if label_path and os.path.exists(label_path):
             with open(label_path, "r") as f:
                 label_data = f.readlines()
             if label_data:
-                class_id = int(label_data[0].split(' ')[0])
-                print(f"     Class ID found in label: {class_id}")
+                class_ids = [int(line.split(' ')[0]) for line in label_data if line.strip()]
+                class_id = max(class_ids)
             else:
                 print("     Label file is empty.")
         else:
             print("     Label file not found. Using default class ID = 0")
 
         label = torch.tensor(class_id, dtype=torch.long)
-        print(f"    Label tensor created: {label} | Shape: {label.shape} | Type: {type(label)}")
+        
 
         return image, label
         

@@ -5,8 +5,8 @@ import numpy as np
 import os
 from torchvision.datasets import ImageFolder  # loads images class-wise from each folder
 
-class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits everything including how images are loaded
-    def __init__(self, root, imb_type='exp', imb_factor=0.01, rand_number=0, transform=None):
+class IMBALANCEVisDrone(ImageFolder):
+    def __init__(self, root, imb_type='None', imb_factor=0.01, rand_number=0, transform=None):
         print("\n--- Initializing IMBALANCEVisDrone ---")
         super(IMBALANCEVisDrone, self).__init__(root, transform)
         print("Loaded dataset from:", root)
@@ -23,7 +23,7 @@ class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits ever
         img_num_list = self.get_img_num_per_cls(self.cls_num, imb_type, imb_factor)
         print("Images to keep per class:", img_num_list)
 
-        self.gen_imbalanced_data(img_num_list)
+        self.gen_imbalanced_data(img_num_list, imb_type)
         print("Final number of samples after imbalance:", len(self.samples))
         print("Updated class distribution:", self.get_cls_num_list())
         print("--- Initialization Complete ---\n")
@@ -48,6 +48,9 @@ class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits ever
             for cls_idx in range(cls_num // 2, cls_num):
                 img_num_per_cls.append(int(img_max * imb_factor))
                 print(f"Class {cls_idx} -> {int(img_max * imb_factor)} images")
+        elif imb_type == 'None':
+            print("No imbalance. Using uniform distribution")
+            img_num_per_cls.extend([int(img_max)] * cls_num)
         else:
             print("Using uniform distribution")
             img_num_per_cls.extend([int(img_max)] * cls_num)
@@ -55,7 +58,7 @@ class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits ever
         print("--- Finished Calculating Image Numbers ---\n")
         return img_num_per_cls
 
-    def gen_imbalanced_data(self, img_num_per_cls):
+    def gen_imbalanced_data(self, img_num_per_cls, imb_type):
         print("\n--- Generating Imbalanced Dataset ---")
         targets_np = np.array(self.targets, dtype=np.int64)
         print("Original number of samples:", len(targets_np))
@@ -70,20 +73,27 @@ class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits ever
         new_samples = []
         self.num_per_cls_dict = {}
 
-        for the_class, the_img_num in zip(classes, img_num_per_cls):
-            self.num_per_cls_dict[the_class] = the_img_num
-            idx = np.where(targets_np == the_class)[0]
-            print(f"\nClass {the_class}:")
-            print(f"  Total found: {len(idx)} samples")
-            print(f"  Will keep:  {the_img_num} samples")
-            np.random.shuffle(idx)
-            print(f"  Shuffled indices: {idx.tolist()[:10]}...")
+        if imb_type == 'None':
+            # No imbalance, keep all images in each class
+            for the_class in classes:
+                self.num_per_cls_dict[the_class] = len(np.where(targets_np == the_class)[0])
+                new_samples.extend([self.samples[i] for i in np.where(targets_np == the_class)[0]])
+        else:
+            # Apply imbalance
+            for the_class, the_img_num in zip(classes, img_num_per_cls):
+                self.num_per_cls_dict[the_class] = the_img_num
+                idx = np.where(targets_np == the_class)[0]
+                print(f"\nClass {the_class}:")
+                print(f"  Total found: {len(idx)} samples")
+                print(f"  Will keep:  {the_img_num} samples")
+                np.random.shuffle(idx)
+                print(f"  Shuffled indices: {idx.tolist()[:10]}...")
 
-            selected_idx = idx[:the_img_num]
-            print(f"  Selected indices: {selected_idx.tolist()}")
+                selected_idx = idx[:the_img_num]
+                print(f"  Selected indices: {selected_idx.tolist()}")
 
-            for i in selected_idx:
-                new_samples.append(self.samples[i])
+                for i in selected_idx:
+                    new_samples.append(self.samples[i])
 
         self.samples = new_samples
         self.targets = [s[1] for s in new_samples]
@@ -103,7 +113,7 @@ class IMBALANCEVisDrone(ImageFolder):  # extends ImageFolder so it inherits ever
 if __name__ == '__main__':
     print("\n--- Main Block Execution ---")
     
-    transform = transforms.Compose([
+    transform = transforms.Compose([ 
         transforms.Resize((256, 256)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -111,8 +121,8 @@ if __name__ == '__main__':
     print("Transform defined.")
 
     trainset = IMBALANCEVisDrone(root="C:/Users/csio/Desktop/Deep Learning/IB-Loss-main/VisDrone2019-DET-train/organized", 
-                                 imb_type='exp', 
-                                 imb_factor=0.01, 
+                                 imb_type='None',  # No imbalance applied
+                                 imb_factor=0.01,  # Imbalance factor won't matter now
                                  rand_number=0, 
                                  transform=transform)
     print("Dataset created.")

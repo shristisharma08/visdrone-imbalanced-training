@@ -1,9 +1,6 @@
 import os
 import sys
 import opts
-parser = opts.get_parser()
-args = parser.parse_args()
-print("Parsed Arguments:", args)
 import torch
 import models
 from torchvision import transforms
@@ -30,6 +27,15 @@ class Logger(object):
         self.file.flush()
 
 def main():
+    print("Script execution started.")  
+
+    parser = opts.get_parser()
+    args = parser.parse_args()
+    print("Parsed Arguments:", args)
+
+    os.makedirs(args.root_log, exist_ok=True)
+    log_file = open(os.path.join(args.root_log, f"{args.exp_str}_results.txt"), "w")
+    sys.stdout = Logger(sys.stdout, log_file)
     print("Inside main() function")
     if not args:
         raise ValueError("No arguments passed!")
@@ -39,12 +45,7 @@ def main():
         args.imb_type, str(args.imb_factor), args.exp_str
     ])
     args.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {args.device}")
-
-   
-    os.makedirs(args.root_log, exist_ok=True)
-    log_file = open(os.path.join(args.root_log, f"{args.exp_str}_results.txt"), "w")
-    sys.stdout = Logger(sys.stdout, log_file)
+    
 
     if args.arch == 'resnet44':
         model = ResNet44(num_classes=args.num_classes).to(args.device)
@@ -79,7 +80,6 @@ def main():
     ])
 
     root = r"C:\Users\csio\Desktop\Deep Learning\IB-Loss-main"
-    print(f"Loading VisDrone dataset from: {root}")
     full_dataset = VisDroneDataset(root=root, train=True, transform=transform_train)
 
     if args.imb_type == 'exp':
@@ -96,6 +96,14 @@ def main():
             imb_factor=args.imb_factor,
             full_dataset=full_dataset
         )
+    elif args.imb_type == 'None':
+        imbalance = IMBALANCEVisDrone(
+            root="C:/Users/csio/Desktop/Deep Learning/IB-Loss-main/VisDrone2019-DET-train/organized",
+            imb_type='None',  # No imbalance
+            imb_factor=args.imb_factor,  # Imbalance factor won't matter for 'None'
+            rand_number=args.rand_number,
+            transform=transform_train
+    )
     else:
         raise ValueError(f"Unsupported imbalance type: {args.imb_type}")
 
@@ -103,11 +111,13 @@ def main():
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
     val_dataset.dataset.transform = transform_val
-
+    
     if len(train_dataset) == 0:
         raise ValueError("Training dataset is empty!")
-
+    
+    print(f"full dataset: {len(full_dataset)}")
     print(f"Train set size: {len(train_dataset)}")
+    print(f"val set size: {len(val_dataset)}")
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0
